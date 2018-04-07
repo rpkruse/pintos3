@@ -51,8 +51,16 @@ page_for_addr (const void *address)
         return hash_entry (e, struct page, hash_elem);
 
       /* No page.  Expand stack? */
+      /* add code */
+      /* OUR CODE */
 
-/* add code */
+      if(address >= PHYS_BASE - STACK_MAX){ //Are we bigger than the max size of the stack?
+         if(address >= thread_current ()->user_esp - 32){ //Is the page fault area in the user addr space? If so, we can expand our stack!
+	    //Uh oh, we are too big we need to expand the stack
+            return page_allocate ((void *) address, false);
+	 }
+      }
+      /* END OF OUR CODE */
 
     }
   return NULL;
@@ -146,15 +154,38 @@ page_out (struct page *p)
      page. */
 
 /* add code here */
+  /* OUR CODE */
+  pagedir_clear_page (p->thread->pagedir, p->addr); //Take the page out of the page table so that nothing can access it
+  /* END OF OUR CODE */
 
   /* Has the frame been modified? */
-
 /* add code here */
+  /*OUR CODE*/
+  dirty = pagedir_is_dirty (p->thread->pagedir, p->addr); //Dirty is true if we changed the file!
+  /* END OF OUR CODE */
 
   /* Write frame contents to disk if necessary. */
-
 /* add code here */
+  /* OUR CODE */
+  if(p->file != NULL) { //If our page has a file
+     if(dirty){ //If the file has been modified checked via the dirty bit
+       if(p->private){ //If private is true then we want to write back to swap => call swap_out(p)
+          ok = swap_out (p);
+       }else{
+          ok = file_write_at (p->file, p->frame->base, p->file_bytes, p->file_offset) == p->file_bytes; //If private is false, then we want to write back to file
+       }
+     }else{ //The file is not dirty (IE it has not been changed) we can simply swap it out
+	p->frame = NULL; //B/c of swap out, we set the frame to NULL
+        return true;
+     }
+  }else{ //The page does not have a file, we try to swap it out
+     ok = swap_out (p);
+  }
 
+  if (ok){ //If we can swap it out (or write to file) we want to remove the frame...if ok is false we won't want to remove it from RAM
+     p->frame = NULL;
+  }
+  /* END OF OUR CODE */
   return ok;
 }
 

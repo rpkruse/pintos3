@@ -116,6 +116,10 @@ struct thread
     int next_handle;                    /* Next handle value. */
     void *user_esp;                     /* User's stack pointer. */
 
+    /* OUR CODE */
+    //struct hash spt;
+    /*END OF OUR CODE */
+
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };

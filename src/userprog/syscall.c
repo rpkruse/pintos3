@@ -505,6 +505,22 @@ static void
 unmap (struct mapping *m) 
 {
 /* add code here */
+  /* OUR CODE */
+  //While we have multiple pages to clear
+  while(m->page_cnt > 0){ 
+    page_deallocate (m->base); //Remove from memory
+    m->base += PGSIZE; //Move the base via 1 page size
+    m->page_cnt -= 1;
+  }
+
+  list_remove (&m->elem);
+
+  //Once we have removed all of the pages, we can close the file
+  file_close(m->file);
+
+  free(m);
+
+  /* END OF OUR CODE */
 }
  
 /* Mmap system call. */
@@ -544,7 +560,7 @@ sys_mmap (int handle, void *addr)
           unmap (m);
           return -1;
         }
-      p->private = false;
+      p->private = false; //We will write back to the file
       p->file = m->file;
       p->file_offset = offset;
       p->file_bytes = length >= PGSIZE ? PGSIZE : length;
@@ -561,8 +577,10 @@ static int
 sys_munmap (int mapping) 
 {
 /* add code here */
-
-  return 0;
+ /* OUR CODE */
+  unmap (lookup_mapping (mapping));
+ /* END OF OUR CODE */
+ return 0;
 }
  
 /* On thread exit, close all open files and unmap all mappings. */

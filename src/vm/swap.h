@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
+
 struct page;
 void swap_init (void);
 void swap_in (struct page *);
